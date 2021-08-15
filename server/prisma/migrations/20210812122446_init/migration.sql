@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "urls" DROP NOT NULL,
+ALTER COLUMN "keywords" DROP NOT NULL;
