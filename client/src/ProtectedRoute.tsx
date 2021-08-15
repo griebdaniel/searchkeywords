@@ -1,4 +1,4 @@
-import {  useState } from "react";
+import { useState } from "react";
 import { Redirect, Route } from "react-router-dom";
 import { genericService } from './services/GenericService';
 
@@ -10,17 +10,20 @@ const ProtectedRoute = ({ component: Component, ...props }: any) => {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
   const authenticate = async () => {
-    // const isAuthenticated = (await axios.get<boolean>(`${serverUrl}/user/logged`, { withCredentials: true })).data;
-
-    // const isAuthenticated = true;
-
     const loggedInUser = await genericService.getLoggedInUser();
 
-    if (loggedInUser) {
+    if (isNil(loggedInUser)) {
+      window.location.href = serverUrl + '/auth/google';
+      return;
+    }
+
+    if (loggedInUser.status === 'ACTIVE') {
       setAuthenticated(true);
     } else {
-      window.location.href = serverUrl + '/auth/google';
+      setAuthenticated(false);
     }
+
+
   };
 
   authenticate();

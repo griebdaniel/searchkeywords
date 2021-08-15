@@ -1,5 +1,6 @@
 import axios from 'axios';
-
+import { sortBy } from 'lodash';
+import { textChangeRangeIsUnchanged } from 'typescript';
 
 const serverUrl = process.env.REACT_APP_SERVER_URL;
 const config = { withCredentials: true };
@@ -45,6 +46,7 @@ class GenericService {
     }
 
     async getUser(): Promise<User | null> {
+        let res;
         const query = `
         query {
             user {
@@ -55,7 +57,11 @@ class GenericService {
                 sendEmail
             }
           }`;
-        const res = await axios.post(serverUrl + '/graphql', { query }, config);
+        try {
+            res = await axios.post(serverUrl + '/graphql', { query }, config);
+        } catch (e) {
+            return null;
+        }
         return res.data.data.user;
     }
 
@@ -105,8 +111,9 @@ class GenericService {
             }
           }
         `;
-        const res = await axios.post(serverUrl + '/graphql', { query }, config);
-        return res.data.data.refreshSearchResultChanges;
+
+        const changes = (await axios.post(serverUrl + '/graphql', { query }, config)).data.data.refreshSearchResultChanges as SearchResultChange[];
+        return changes?.reverse();
     }
 
     async getSearchResultChanges(): Promise<SearchResultChange[]> {
@@ -123,8 +130,8 @@ class GenericService {
                 }
             }
         }`;
-        const res = await axios.post(serverUrl + '/graphql', { query }, config);
-        return res.data.data.searchResultChanges;
+        const changes = (await axios.post(serverUrl + '/graphql', { query }, config)).data.data.searchResultChanges as SearchResultChange[];
+        return changes?.reverse();
     }
 
 

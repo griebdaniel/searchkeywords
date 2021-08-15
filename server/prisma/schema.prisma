@@ -15,8 +15,8 @@ model User {
   email     String  @unique
   status    Status  @default(INACTIVE)
   sendEmail Boolean @default(false)
-  urls      Json?
-  keywords  Json?
+  urls      Json    @default("[]")   
+  keywords  Json    @default("[]")
 
   @@map(name: "users")
 }

@@ -11,6 +11,7 @@ import pgSession from 'connect-pg-simple';
 import axios from 'axios';
 import cheerio from 'cheerio';
 import nodemailer from 'nodemailer';
+import path from 'path';
 
 import { find, isEqual, sortBy, differenceWith } from 'lodash';
 
@@ -186,8 +187,7 @@ const sendMail = async (to: string, changes: SearchResult[]) => {
     };
 
     try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`Email was sent: ${info}`);
+        await transporter.sendMail(mailOptions);
     } catch (e) {
         console.log(e);
     }
@@ -195,16 +195,16 @@ const sendMail = async (to: string, changes: SearchResult[]) => {
 
 let emailTimer: any;
 
-const watchForChanges = () => {
+const watchForearchResultChanges = () => {
     emailTimer = setInterval(async () => {
         const users = (await prisma.user.findMany()) as User[];
         for (const user of users) {
             const changes = await updateSearchResultChange(user);
             if (user.sendEmail && changes?.length > 0) {
-                sendMail('griebdaniel94@gmail.com', changes);
+                sendMail(user.email, changes);
             }
         }
-    }, 30000);
+    }, Number(process.env.SEARCH_FREQUENCY));
 };
 
 
@@ -218,7 +218,7 @@ const root = {
     },
 
     updateUser: async ({ user }: { user: User }, req: Request) => {
-        let id = (req.user as any).id;
+        let id = (req.user as any)?.id;
         if (user.email) {
             id = (await prisma.user.findFirst({ where: { email: user.email } }))?.id;
         }
@@ -242,10 +242,7 @@ const root = {
     },
 
     refreshSearchResultChanges: async (args: any, req: Request) => {
-        const changes = await updateSearchResultChange(req.user as any);
-        if (changes.length > 0) {
-            sendMail((req.user as any).email, changes);
-        }
+        await updateSearchResultChange(req.user as any);
         return searchResultChanges.get((req.user as any).id);
     },
 
@@ -308,17 +305,16 @@ app.get('/auth/fail', (req, res) => {
     res.sendStatus(401);
 });
 
-//Protected Routes.
-app.use('/graphql', graphqlHTTP({
-    schema: schema,
-    rootValue: root,
-    graphiql: true,
-}));
-
 const checkUserLoggedIn = (req: Request, res: Response, next: NextFunction) => {
     req.user ? next() : res.sendStatus(401);
 };
 
+//Protected Routes.
+app.use('/graphql', checkUserLoggedIn, graphqlHTTP({
+    schema: schema,
+    rootValue: root,
+    graphiql: true,
+}));
 
 app.get('/auth/success', checkUserLoggedIn, (req, res) => {
     res.redirect(process.env.LOGIN_SUCCESS_REDIREC_URL as string);
@@ -335,9 +331,15 @@ app.get('/logout', (req, res) => {
     res.send(`<h1>logged out successfully<h1>`);
 });
 
+app.use(express.static(path.join(__dirname, '../../client/build')));
+
+app.get('/*', function (req, res) {
+    res.sendFile(path.join(__dirname, '../../client/build', 'index.html'));
+});
+
 const server = app.listen(port, () => {
     console.log(`Keyword search app listening at http://localhost:${port}`);
-    // watchForChanges();
+    watchForearchResultChanges();
 });
 
 process.on('SIGTERM', () => {

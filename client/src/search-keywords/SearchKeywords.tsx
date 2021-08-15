@@ -4,7 +4,7 @@ import { uniq, without, isEqual, sortBy, difference } from 'lodash';
 import { useEffect } from 'react';
 
 import { genericService, SearchResult, SearchResultChange } from '../services/GenericService';
-import { Clear, ClearAll, Help, Refresh, Settings } from '@material-ui/icons';
+import { Brightness1, Clear, ClearAll, Help, Refresh, Settings } from '@material-ui/icons';
 import { DateTime } from 'luxon';
 import axios from 'axios';
 
@@ -26,6 +26,11 @@ const useStyles = makeStyles((theme: Theme) =>
         },
         settings: {
             color: theme.palette.grey[400]
+        },
+        keyword: {
+            fontWeight: 900,
+            color: theme.palette.warning.main,
+            filter: 'brightness(1.2)'
         }
     }),
 );
@@ -210,7 +215,7 @@ function SearchKeywords(props: any) {
                     >
                         <Help className={classes.help} />
                     </Tooltip>
-                    <IconButton  className={classes.settings} onClick={() => setOpenPreferences(true)} aria-label="settings">
+                    <IconButton className={classes.settings} onClick={() => setOpenPreferences(true)} aria-label="settings">
                         <Settings />
                     </IconButton>
                 </Toolbar>
@@ -305,8 +310,12 @@ function SearchKeywords(props: any) {
                                     secondary={
                                         <div className={classes.root}>
                                             {searchResult.keywords.map((keyword, index) => {
+                                                const contextParts = keyword.context.split(keyword.keyword);
                                                 return (
-                                                    <Tooltip key={index} title={keyword.context}>
+                                                    <Tooltip
+                                                        key={index}
+                                                        title={<Typography>{contextParts.map((part, index) => <Fragment>{part}{(index !== contextParts.length - 1) && <span className={classes.keyword}>{keyword.keyword}</span>}</Fragment>)}</Typography>}
+                                                    >
                                                         <Chip size="small" label={keyword.keyword} className={classes.chip} />
                                                     </Tooltip>
                                                 );
@@ -359,8 +368,11 @@ function SearchKeywords(props: any) {
                                                 <TableCell><Link href={change.url}>{change.url}</Link>{ }</TableCell>
                                                 <TableCell>
                                                     {change.keywords.map((keyword, index) => {
+                                                        const contextParts = keyword.context.split(keyword.keyword);
                                                         return (
-                                                            <Tooltip key={index} title={keyword.context}>
+                                                            <Tooltip key={index}
+                                                                title={<Typography>{contextParts.map((part, index) => <Fragment>{part}{(index !== contextParts.length - 1) && <span className={classes.keyword}>{keyword.keyword}</span>}</Fragment>)}</Typography>}
+                                                            >
                                                                 <Chip size="small" label={keyword.keyword} className={classes.chip} />
                                                             </Tooltip>
                                                         );
