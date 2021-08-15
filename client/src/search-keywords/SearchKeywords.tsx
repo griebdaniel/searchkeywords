@@ -120,8 +120,10 @@ function SearchKeywords(props: any) {
     };
 
     const addKeyword = () => {
-        setKeywords(uniq([...keywords, keyword]));
-        setKeyword('');
+        if (keyword) {
+            setKeywords(uniq([...keywords, keyword]));
+            setKeyword('');
+        }
     };
 
     const deleteUrl = (url: string) => {
@@ -150,6 +152,7 @@ function SearchKeywords(props: any) {
             await genericService.updateUser({ urls, keywords });
             saved.current = { urls: [...urls], keywords: [...keywords] };
             setSaveSuccessMessageOpen(true);
+            setDisableSaveButton(true);
         } catch (e) {
 
         }
@@ -239,7 +242,7 @@ function SearchKeywords(props: any) {
             <div style={{ display: 'grid', width: '100%', gridTemplateColumns: '1fr 0 2fr', columnGap: 20 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', margin: 40 }}>
                     <div>
-                        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: 500 }}>
+                        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
                             <TextField error={invalidUrl} helperText={invalidUrl ? 'Invalid url.' : ''} placeholder="Add a new URL like 'https://google.com'" style={{ marginRight: '20px', width: '100%' }} value={url} onChange={event => setUrl(event.target.value)}></TextField>
                             <Button variant="outlined" onClick={addUrl} color="primary">Add</Button>
                         </div>
@@ -260,7 +263,7 @@ function SearchKeywords(props: any) {
                         </div>
                     </div>
                     <div style={{ marginTop: 40 }}>
-                        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: 500 }}>
+                        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
                             <TextField placeholder="Add a new KEYWORD like 'Jehova', 'Witness', 'jw.org'" style={{ marginRight: '20px', width: '100%' }} value={keyword} onChange={event => setKeyword(event.target.value)}></TextField>
                             <Button variant="outlined" onClick={addKeyword} color="primary">Add</Button>
                         </div>
