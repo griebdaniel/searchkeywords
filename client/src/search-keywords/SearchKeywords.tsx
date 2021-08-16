@@ -149,12 +149,12 @@ function SearchKeywords(props: any) {
 
     const save = async () => {
         try {
+            setDisableSaveButton(true);
             await genericService.updateUser({ urls, keywords });
             saved.current = { urls: [...urls], keywords: [...keywords] };
             setSaveSuccessMessageOpen(true);
-            setDisableSaveButton(true);
         } catch (e) {
-
+            setDisableSaveButton(false);
         }
     };
 
