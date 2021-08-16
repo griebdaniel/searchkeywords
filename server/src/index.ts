@@ -94,46 +94,6 @@ const schema = buildSchema(`
 const previousSearchResults = new Map<string, SearchResult[]>();
 const searchResultChanges = new Map<string, Array<{ date: Date, changes: SearchResult[] }>>();
 
-const getSearchResultChange = (currentResults: SearchResult[], previousResults: SearchResult[]) => {
-    const searchResultChange = [] as SearchResult[];
-    for (const currentResult of currentResults) {
-        const previousResult = previousResults.find((savedResult) => savedResult.url === currentResult.url);
-
-        if (!previousResult) {
-            searchResultChange.push({ ...currentResult });
-            continue;
-        }
-
-        const newKeywords = differenceWith(currentResult.keywords, previousResult.keywords, isEqual);
-
-        if (newKeywords.length > 0) {
-            searchResultChange.push({ url: currentResult.url, keywords: newKeywords });
-        }
-    }
-
-    return searchResultChange;
-};
-
-const updateSearchResultChange = async (user: User) => {
-    if (!searchResultChanges.get(user.id)) {
-        searchResultChanges.set(user.id, []);
-    }
-    if (!previousSearchResults.get(user.id)) {
-        previousSearchResults.set(user.id, []);
-    }
-
-    const currentSearchResult = await searchForKeywordsInUrls(user.urls, user.keywords);
-    const savedSearchResult = previousSearchResults.get(user.id);
-
-    const searchResultDiff = getSearchResultChange(currentSearchResult, savedSearchResult!);
-
-    if (searchResultDiff.length > 0) {
-        searchResultChanges.get(user.id)!.push({ date: new Date(), changes: searchResultDiff });
-    }
-
-    return searchResultDiff;
-};
-
 const searchForKeywordsInUrls = async (urls: string[], keywords: string[]): Promise<SearchResult[]> => {
     keywords = keywords.map(keyword => keyword.toLowerCase());
 
@@ -167,6 +127,48 @@ const searchForKeywordsInUrls = async (urls: string[], keywords: string[]): Prom
 
     return searchResults;
 };
+
+const getSearchResultChange = (currentResults: SearchResult[], previousResults: SearchResult[]) => {
+    const searchResultChange = [] as SearchResult[];
+    for (const currentResult of currentResults) {
+        const previousResult = previousResults.find((savedResult) => savedResult.url === currentResult.url);
+
+        if (!previousResult) {
+            searchResultChange.push({ ...currentResult });
+            continue;
+        }
+
+        const newKeywords = differenceWith(currentResult.keywords, previousResult.keywords, isEqual);
+
+        if (newKeywords.length > 0) {
+            searchResultChange.push({ url: currentResult.url, keywords: newKeywords });
+        }
+    }
+    return searchResultChange;
+};
+
+const updateSearchResultChange = async (user: User) => {
+    if (!searchResultChanges.get(user.id)) {
+        searchResultChanges.set(user.id, []);
+    }
+    if (!previousSearchResults.get(user.id)) {
+        previousSearchResults.set(user.id, []);
+    }
+
+    const currentSearchResult = await searchForKeywordsInUrls(user.urls, user.keywords);
+    const previousSearchResult = previousSearchResults.get(user.id);
+
+    const searchResultDiff = getSearchResultChange(currentSearchResult, previousSearchResult!);
+
+    if (searchResultDiff.length > 0) {
+        searchResultChanges.get(user.id)!.push({ date: new Date(), changes: searchResultDiff });
+        previousSearchResults.set(user.id, currentSearchResult);
+    }
+
+    return searchResultDiff;
+};
+
+
 
 const sendMail = async (to: string, changes: SearchResult[]) => {
     const transporter = nodemailer.createTransport({
